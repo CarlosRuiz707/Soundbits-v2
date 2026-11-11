@@ -1,1 +1,29 @@
-
+name: Build APK
+on: [workflow_dispatch, push]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: Compilar APK de depuración
+        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Preparar APK
+        run: cp "$(find app/build/outputs/apk -name '*.apk' | head -n 1)" Tunebox.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tunebox-apk
+          path: Tunebox.apk
+          if-no-files-found: error
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: Tunebox ${{ github.run_number }}
+          files: Tunebox.apk
